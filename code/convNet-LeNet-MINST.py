@@ -8,7 +8,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.utils import np_utils
-from keras.regularizers import l2, activity_l2
+from keras.regularizers import l2, l1, l1l2, activity_l2, activity_l1
 from keras.utils.visualize_util import plot
 from keras.optimizers import SGD, Adam, RMSprop
 from keras.callbacks import EarlyStopping
@@ -50,7 +50,7 @@ def convNet_LeNet(
 	NORMALIZE = True,
 	# Network Parameters
 	BATCH_SIZE = 128,
-	NUM_EPOCHS = 30,
+	NUM_EPOCHS = 20,
 	# Number of convolutional filters 
 	NUM_FILTERS = 32,
 	# side length of maxpooling square
@@ -60,11 +60,13 @@ def convNet_LeNet(
 	# dropout rate for regularization
 	DROPOUT_RATE = 0.5,
 	# hidden number of neurons first layer
-	N_HIDDEN = 128,
+	NUM_HIDDEN = 128,
 	# validation data
 	VALIDATION_SPLIT=0.2, # 20%
 	# optimizer used
-	OPTIMIZER = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+	OPTIMIZER = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+	# regularization
+	REGULARIZER = l2(0.01)
 	): 
 
 	# Output classes, number of MINST DIGITS
@@ -122,13 +124,13 @@ def convNet_LeNet(
 	nn.add(Flatten())
 	 
 	# FIRST HIDDEN LAYER OF DENSE NETWORK
-	nn.add(Dense(N_HIDDEN))  
+	nn.add(Dense(NUM_HIDDEN))  
 	nn.add(Activation('relu'))
 	nn.add(Dropout(DROPOUT_RATE))          
 
 	# OUTFUT LAYER with NUM_CLASSES OUTPUTS
 	# ACTIVATION IS SOFTMAX, REGULARIZATION IS L2
-	nn.add(Dense(NUM_CLASSES, W_regularizer=l2(0.01) ))
+	nn.add(Dense(NUM_CLASSES, W_regularizer=REGULARIZER))
 	nn.add(Activation('softmax') )
 
 	#summary
@@ -218,27 +220,32 @@ def convNet_LeNet(
 #print(log.history)
 #log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_FILTERS=64)
 #print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_FILTERS=128)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_FILTERS=256)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_POOL=4)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_POOL=8)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_CONV=4)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_CONV=8)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_HIDDEN=32)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_HIDDEN=64)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_HIDDEN=256)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_HIDDEN=512)
-print(log.history)
-log = convNet_LeNet(OPTIMIZER='Adam', VALIDATION_SPLIT=0.2, NUM_HIDDEN=1024)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_FILTERS=128)
+#print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_FILTERS=256)
+#print(log.history)
+# x log = convNet_LeNet(OPTIMIZER='Adam', NUM_POOL=4)
+# x print(log.history)
+# x log = convNet_LeNet(OPTIMIZER='Adam', NUM_POOL=8)
+# x print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_CONV=4)
+#print(log.history)
+# x log = convNet_LeNet(OPTIMIZER='Adam', NUM_CONV=8)
+# X print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_HIDDEN=32)
+#print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_HIDDEN=64)
+#print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_HIDDEN=256)
+#print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_HIDDEN=512)
+#print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', NUM_HIDDEN=1024)
+#print(log.history)
+#log = convNet_LeNet(OPTIMIZER='Adam', REGULARIZER=l1(0.01))
+#print(log.history)
+regular = l1l2(l1=0.01, l2=0.01)
+log = convNet_LeNet(OPTIMIZER='Adam', REGULARIZER=regular)
 print(log.history)
 
 
