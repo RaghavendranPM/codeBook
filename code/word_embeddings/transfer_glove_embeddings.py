@@ -1,5 +1,4 @@
-from keras.layers import Embedding, Dense, Dropout
-from keras.layers.recurrent import LSTM
+from keras.layers import Dense, Dropout
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
@@ -13,47 +12,48 @@ np.random.seed(42)
 
 INPUT_FILE = "../data/umich-sentiment-train.txt"
 GLOVE_MODEL = "../data/glove.6B.100d.txt"
-MAX_WORDS = 5000
+VOCAB_SIZE = 5000
 EMBED_SIZE = 100
 BATCH_SIZE = 64
 NUM_EPOCHS = 10
 
+print("reading data...")
 counter = collections.Counter()
 fin = open(INPUT_FILE, "rb")
-max_len = 0
+maxlen = 0
 for line in fin:
     _, sent = line.strip().split("\t")
     words = [x.lower() for x in nltk.word_tokenize(sent)]
-    if len(words) > max_len:
-        max_len = len(words)
+    if len(words) > maxlen:
+        maxlen = len(words)
     for word in words:
         counter[word] += 1
 fin.close()
 
+print("creating vocabulary...")
 word2index = collections.defaultdict(int)
-for wid, word in enumerate(counter.most_common(MAX_WORDS)):
+for wid, word in enumerate(counter.most_common(VOCAB_SIZE)):
     word2index[word[0]] = wid + 1
-vocab_size = len(word2index) + 1
+vocab_sz = len(word2index) + 1
 index2word = {v:k for k, v in word2index.items()}
-    
-xs, ys = [], []
+index2word[0] = "_UNK_"
+
+print("creating word sequences...")
+ws, ys = [], []
 fin = open(INPUT_FILE, "rb")
 for line in fin:
     label, sent = line.strip().split("\t")
     ys.append(int(label))
     words = [x.lower() for x in nltk.word_tokenize(sent)]
     wids = [word2index[word] for word in words]
-    xs.append(wids)
+    ws.append(wids)
 fin.close()
-X = pad_sequences(xs, maxlen=max_len)
+W = pad_sequences(ws, maxlen=maxlen)
 Y = np_utils.to_categorical(ys)
 
-Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, 
-                                                random_state=42)
-print(Xtrain.shape, Xtest.shape, Ytrain.shape, Ytest.shape)
-
 # load GloVe vectors
-word2emb = {}
+print("loading GloVe vectors...")
+word2emb = collections.defaultdict(int)
 fglove = open(GLOVE_MODEL, "rb")
 for line in fglove:
     cols = line.strip().split()
@@ -61,19 +61,23 @@ for line in fglove:
     embedding = np.array(cols[1:], dtype="float32")
     word2emb[word] = embedding
 fglove.close()    
-embedding_weights = np.zeros((vocab_size, EMBED_SIZE))
-for word, index in word2index.items():
-    try:
-        embedding_weights[index, :] = word2emb[word]
-    except KeyError:
-        pass
-    
+
+print("transferring embeddings...")
+X = np.zeros((W.shape[0], EMBED_SIZE))
+for i in range(W.shape[0]):
+    E = np.zeros((EMBED_SIZE, maxlen))
+    words = [index2word[wid] for wid in W[i].tolist()]
+    for j in range(maxlen):
+        E[:, j] = word2emb[words[j]]
+    X[i, :] = np.sum(E, axis=1)
+   
+Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, 
+                                                random_state=42)
+print(Xtrain.shape, Xtest.shape, Ytrain.shape, Ytest.shape)
+
 model = Sequential()
-model.add(Embedding(vocab_size, EMBED_SIZE, input_length=max_len,
-                    weights=[embedding_weights], mask_zero=True,
-                    trainable=False))
-model.add(LSTM(10, return_sequences=False))
-model.add(Dropout(0.3))
+model.add(Dense(32, input_dim=EMBED_SIZE, activation="relu"))
+model.add(Dropout(0.2))
 model.add(Dense(2, activation="softmax"))
 
 model.compile(optimizer="adam", loss="binary_crossentropy",
@@ -81,6 +85,20 @@ model.compile(optimizer="adam", loss="binary_crossentropy",
 history = model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE,
                     nb_epoch=NUM_EPOCHS,
                     validation_data=(Xtest, Ytest))
+
+#model = Sequential()
+#model.add(Embedding(vocab_size, EMBED_SIZE, input_length=max_len,
+#                    weights=[embedding_weights], mask_zero=True,
+#                    trainable=False))
+#model.add(LSTM(10, return_sequences=False))
+#model.add(Dropout(0.3))
+#model.add(Dense(2, activation="softmax"))
+#
+#model.compile(optimizer="adam", loss="binary_crossentropy",
+#              metrics=["accuracy"])
+#history = model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE,
+#                    nb_epoch=NUM_EPOCHS,
+#                    validation_data=(Xtest, Ytest))
 
 # plot loss function
 plt.subplot(211)

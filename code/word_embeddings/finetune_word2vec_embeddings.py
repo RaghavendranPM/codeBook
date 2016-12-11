@@ -1,6 +1,7 @@
 from gensim.models import Word2Vec
-from keras.layers import Embedding, Dense, Dropout
-from keras.layers.recurrent import LSTM
+from keras.layers import Embedding, Dense
+from keras.layers.convolutional import Convolution1D
+from keras.layers.pooling import GlobalMaxPooling1D
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import np_utils
@@ -14,27 +15,29 @@ np.random.seed(42)
 
 INPUT_FILE = "../data/umich-sentiment-train.txt"
 WORD2VEC_MODEL = "../data/GoogleNews-vectors-negative300.bin.gz"
-MAX_WORDS = 5000
+VOCAB_SIZE = 5000
 EMBED_SIZE = 300
+NUM_FILTERS = 256
+NUM_WORDS = 3
 BATCH_SIZE = 64
 NUM_EPOCHS = 10
 
 counter = collections.Counter()
 fin = open(INPUT_FILE, "rb")
-max_len = 0
+maxlen = 0
 for line in fin:
     _, sent = line.strip().split("\t")
     words = [x.lower() for x in nltk.word_tokenize(sent)]
-    if len(words) > max_len:
-        max_len = len(words)
+    if len(words) > maxlen:
+        maxlen = len(words)
     for word in words:
         counter[word] += 1
 fin.close()
 
 word2index = collections.defaultdict(int)
-for wid, word in enumerate(counter.most_common(MAX_WORDS)):
+for wid, word in enumerate(counter.most_common(VOCAB_SIZE)):
     word2index[word[0]] = wid + 1
-vocab_size = len(word2index) + 1
+vocab_sz = len(word2index) + 1
 index2word = {v:k for k, v in word2index.items()}
     
 xs, ys = [], []
@@ -46,7 +49,7 @@ for line in fin:
     wids = [word2index[word] for word in words]
     xs.append(wids)
 fin.close()
-X = pad_sequences(xs, maxlen=max_len)
+X = pad_sequences(xs, maxlen=maxlen)
 Y = np_utils.to_categorical(ys)
 
 Xtrain, Xtest, Ytrain, Ytest = train_test_split(X, Y, test_size=0.3, 
@@ -55,26 +58,42 @@ print(Xtrain.shape, Xtest.shape, Ytrain.shape, Ytest.shape)
 
 # load word2vec model
 word2vec = Word2Vec.load_word2vec_format(WORD2VEC_MODEL, binary=True)
-embedding_weights = np.zeros((vocab_size, EMBED_SIZE))
+embedding_weights = np.zeros((vocab_sz, EMBED_SIZE))
 for word, index in word2index.items():
     try:
         embedding_weights[index, :] = word2vec[word]
     except KeyError:
         pass
 
+#model = Sequential()
+#model.add(Embedding(vocab_sz, EMBED_SIZE, input_length=maxlen,
+#                    weights=[embedding_weights], mask_zero=True,
+#                    trainable=False))
+#model.add(LSTM(10, return_sequences=False))
+#model.add(Dropout(0.3))
+#model.add(Dense(2, activation="softmax"))
+#
+#model.compile(optimizer="adam", loss="binary_crossentropy",
+#              metrics=["accuracy"])
+#history = model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE,
+#                    nb_epoch=NUM_EPOCHS,
+#                    validation_data=(Xtest, Ytest))
+
 model = Sequential()
-model.add(Embedding(vocab_size, EMBED_SIZE, input_length=max_len,
-                    weights=[embedding_weights], mask_zero=True,
-                    trainable=False))
-model.add(LSTM(10, return_sequences=False))
-model.add(Dropout(0.3))
+model.add(Embedding(vocab_sz, EMBED_SIZE, input_length=maxlen,
+                    weights=[embedding_weights],
+                    trainable=True,
+                    dropout=0.2))
+model.add(Convolution1D(nb_filter=NUM_FILTERS, filter_length=NUM_WORDS,
+                        activation="relu"))
+model.add(GlobalMaxPooling1D())
 model.add(Dense(2, activation="softmax"))
 
 model.compile(optimizer="adam", loss="binary_crossentropy",
               metrics=["accuracy"])
 history = model.fit(Xtrain, Ytrain, batch_size=BATCH_SIZE,
                     nb_epoch=NUM_EPOCHS,
-                    validation_data=(Xtest, Ytest))
+                    validation_data=(Xtest, Ytest))              
 
 # plot loss function
 plt.subplot(211)
