@@ -102,7 +102,7 @@ class Text8Sentences(object):
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 DATA_DIR = "../data/"
-sentences = Text8Sentences(os.path.join(DATA_DIR, "text8"))
+sentences = Text8Sentences(os.path.join(DATA_DIR, "text8"), 50)
 model = word2vec.Word2Vec(sentences, size=300, min_count=30)
 
 print("""model.most_similar("woman")""")
