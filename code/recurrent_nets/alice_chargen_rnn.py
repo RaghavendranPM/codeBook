@@ -7,7 +7,7 @@ from keras.layers import Dense, Activation
 from keras.utils.visualize_util import plot
 import numpy as np
 
-INPUT_FILE = "data/alice_in_wonderland.txt"
+INPUT_FILE = "../data/alice_in_wonderland.txt"
 
 # extract the input as a stream of characters
 print("Extracting text from input...")
@@ -41,13 +41,14 @@ index2char = dict((i, c) for i, c in enumerate(chars))
 #    sky was f -> a
 #   sky was fa -> l
 print("Creating input and label text...")
-seqlen = 10
-step = 1
+SEQLEN = 10
+STEP = 1
+
 input_chars = []
 label_chars = []
-for i in range(0, len(text) - seqlen, step):
-    input_chars.append(text[i:i + seqlen])
-    label_chars.append(text[i + seqlen])
+for i in range(0, len(text) - SEQLEN, STEP):
+    input_chars.append(text[i:i + SEQLEN])
+    label_chars.append(text[i + SEQLEN])
 
 # vectorize the input and label chars
 # Each row of the input is represented by seqlen characters, each 
@@ -58,7 +59,7 @@ for i in range(0, len(text) - seqlen, step):
 # dense encoding of size len(char). Hence shape(y) is (len(input_chars),
 # nb_chars).
 print("Vectorizing input and label text...")
-X = np.zeros((len(input_chars), seqlen, nb_chars), dtype=np.bool)
+X = np.zeros((len(input_chars), SEQLEN, nb_chars), dtype=np.bool)
 y = np.zeros((len(input_chars), nb_chars), dtype=np.bool)
 for i, input_char in enumerate(input_chars):
     for j, ch in enumerate(input_char):
@@ -67,9 +68,16 @@ for i, input_char in enumerate(input_chars):
 
 # Build the model. We use a single RNN with a fully connected layer
 # to compute the most likely predicted output char
+HIDDEN_SIZE = 128
+BATCH_SIZE = 128
+NUM_ITERATIONS = 25
+NUM_EPOCHS_PER_ITERATION = 1
+NUM_PREDS_PER_EPOCH = 100
+
 model = Sequential()
-model.add(SimpleRNN(512, return_sequences=False,
-                    input_shape=(seqlen, nb_chars)))
+model.add(SimpleRNN(HIDDEN_SIZE, return_sequences=False,
+                    input_shape=(SEQLEN, nb_chars),
+                    unroll=True))
 #model.add(Dropout(0.2))                    
 #model.add(SimpleRNN(512, return_sequences=False))                    
 #model.add(Dropout(0.2))
@@ -81,11 +89,10 @@ model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
 plot(model, to_file='/tmp/model.png')
 
 # We train the model in batches and test output generated at each step
-batch_size = 128
-for iteration in range(50):
+for iteration in range(NUM_ITERATIONS):
     print("=" * 50)
     print("Iteration #: %d" % (iteration))
-    model.fit(X, y, batch_size=batch_size, nb_epoch=1)
+    model.fit(X, y, batch_size=BATCH_SIZE, nb_epoch=NUM_EPOCHS_PER_ITERATION)
     
     # testing model
     # randomly choose a row from input_chars, then use it to 
@@ -94,8 +101,8 @@ for iteration in range(50):
     test_chars = input_chars[test_idx]
     print("Generating from seed: %s" % (test_chars))
     print(test_chars, end="")
-    for i in range(100):
-        Xtest = np.zeros((1, seqlen, nb_chars))
+    for i in range(NUM_PREDS_PER_EPOCH):
+        Xtest = np.zeros((1, SEQLEN, nb_chars))
         for i, ch in enumerate(test_chars):
             Xtest[0, i, char2index[ch]] = 1
         pred = model.predict(Xtest, verbose=0)[0]
