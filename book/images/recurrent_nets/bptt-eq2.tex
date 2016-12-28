@@ -1,0 +1,6 @@
+\begin{align*}
+\frac{\partial{L_{3}}}{\partial{W}} &= \frac{\partial{L_{3}}}{\partial{y_{3}}}.\frac{\partial{y_{3}}}{\partial{h_{2}}}.\frac{\partial{h_{2}}}{\partial{W}}\\
+&= \sum_{t=0}^{2} \frac{\partial{L_{3}}}{\partial{y_{3}}}.\frac{\partial{y_{3}}}{\partial{h_{2}}}.\frac{\partial{h_{2}}}{\partial{h_{t}}}.\frac{\partial{h_{t}}}{\partial{W}}\\
+&= \sum_{t=0}^{2} \frac{\partial{L_{3}}}{\partial{y_{3}}}.\frac{\partial{y_{3}}}{\partial{h_2}}.\left ( \prod_{j=t+1}^{2} \frac{\partial{h_{j}}}{\partial{h_{j-1}}}\right ).\frac{\partial{h_{k}}}{\partial{W}}
+\end{align*}
+

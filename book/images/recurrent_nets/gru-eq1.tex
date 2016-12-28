@@ -1,0 +1,9 @@
+\begin{align*}
+z &= \sigma(W_{z}h_{t-1} + U_{z}x_{t})
+\\
+r &= \sigma(W_{r}h_{t-1} + U_{r}x_{t})
+\\
+c &= tanh(W_{c}(h_{t-1} \otimes r) + U_{c}x_{t})
+\\
+h_{t} &= (z \otimes c) \oplus ((1 - z) \otimes h_{t-1})
+\end{align*}

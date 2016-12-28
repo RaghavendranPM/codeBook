@@ -1,0 +1,14 @@
+\begin{align*}
+i &= \sigma(W_{i}h_{t-1} + U_{i}x_{t})
+\\
+f &= \sigma(W_{f}h_{t-1} + U_{f}x_{t})
+\\
+o &= \sigma(W_{o}h_{t-1} + U_{o}x_{t})
+\\
+g &= tanh(W_{g}h_{t-1} + U_{g}x_{t})
+\\
+c_{t} &= (c_{t-1} \otimes f) \oplus (g \otimes i)
+\\
+h_{t} &= tanh(c_{t}) \otimes o
+\end{align*}
+

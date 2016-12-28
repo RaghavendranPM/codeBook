@@ -7,8 +7,10 @@ from keras.models import Sequential
 from sklearn.cross_validation import train_test_split
 import nltk
 import numpy as np
+import seq2seq
+from seq2seq.models import SimpleSeq2Seq
 
-INPUT_FILE = "data/alice_in_wonderland.txt"
+INPUT_FILE = "../data/alice_in_wonderland.txt"
 
 # (1) extract text from file into list of words
 words = []
@@ -65,17 +67,26 @@ for i, output_text in enumerate(output_texts):
 Xtrain, Xval, ytrain, yval = train_test_split(X, y, test_size=0.1, 
                                               random_state=42)
     
-# (5) build model
-model = Sequential()
-model.add(LSTM(512, input_shape=(maxlen, nb_chars), return_sequences=False))
-model.add(RepeatVector(maxlen))
-model.add(LSTM(512, return_sequences=True))
+## (5) build model
+#model = Sequential()
+#model.add(LSTM(512, input_shape=(maxlen, nb_chars), return_sequences=False))
+#model.add(RepeatVector(maxlen))
+#model.add(LSTM(512, return_sequences=True))
+#model.add(TimeDistributed(Dense(nb_chars)))
+#model.add(Activation("softmax"))
+#
+#model.compile(loss="categorical_crossentropy", optimizer="adam", 
+#              metrics=["accuracy"])
+
+# (5/alt) build model using seq2seq
+model = SimpleSeq2Seq(input_shape=(maxlen, nb_chars),
+                      hidden_dim=512, output_length=maxlen,
+                      output_dim=nb_chars, unroll=True)
 model.add(TimeDistributed(Dense(nb_chars)))
-model.add(Activation("softmax"))
-
-model.compile(loss="categorical_crossentropy", optimizer="adam", 
+model.add(Activation("softmax"))                      
+model.compile(loss="categorical_crossentropy", optimizer="adam",
               metrics=["accuracy"])
-
+              
 # (6) test model
 def decode_text(y):
     text_seq = []
