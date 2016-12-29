@@ -4,8 +4,9 @@ from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 from keras.models import Sequential
 from keras.preprocessing import sequence
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 import collections
+import matplotlib.pyplot as plt
 import nltk
 import numpy as np
 import os
@@ -87,9 +88,27 @@ model.add(Activation("sigmoid"))
 model.compile(loss="binary_crossentropy", optimizer="adam", 
               metrics=["accuracy"])
 
-model.fit(Xtrain, ytrain, batch_size=BATCH_SIZE, nb_epoch=NUM_EPOCHS, 
-          validation_data=(Xtest, ytest))
+history = model.fit(Xtrain, ytrain, batch_size=BATCH_SIZE, 
+                    nb_epoch=NUM_EPOCHS,
+                    validation_data=(Xtest, ytest))
 
+# plot loss and accuracy
+plt.subplot(211)
+plt.title("Accuracy")
+plt.plot(history.history["acc"], color="g", label="Train")
+plt.plot(history.history["val_acc"], color="b", label="Validation")
+plt.legend(loc="best")
+
+plt.subplot(212)
+plt.title("Loss")
+plt.plot(history.history["loss"], color="g", label="Train")
+plt.plot(history.history["val_loss"], color="b", label="Validation")
+plt.legend(loc="best")
+
+plt.tight_layout()
+plt.show()
+
+# evaluate
 score, acc = model.evaluate(Xtest, ytest, batch_size=BATCH_SIZE)
 print("Test score: %.3f, accuracy: %.3f" % (score, acc))
 

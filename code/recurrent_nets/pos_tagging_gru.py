@@ -124,13 +124,13 @@ model = Sequential()
 model.add(Embedding(s_vocabsize, EMBED_SIZE,
                     input_length=MAX_SEQLEN,
                     dropout=0.2))
-#model.add(LSTM(HIDDEN_SIZE, dropout_W=0.2, dropout_U=0.2))
+model.add(LSTM(HIDDEN_SIZE, dropout_W=0.2, dropout_U=0.2))
 #model.add(GRU(HIDDEN_SIZE, dropout_W=0.2, dropout_U=0.2))
-model.add(Bidirectional(LSTM(HIDDEN_SIZE, dropout_W=0.2, dropout_U=0.2)))
+#model.add(Bidirectional(LSTM(HIDDEN_SIZE, dropout_W=0.2, dropout_U=0.2)))
 model.add(RepeatVector(MAX_SEQLEN))
-#model.add(LSTM(HIDDEN_SIZE, return_sequences=True))
+model.add(LSTM(HIDDEN_SIZE, return_sequences=True))
 #model.add(GRU(HIDDEN_SIZE, return_sequences=True))
-model.add(Bidirectional(LSTM(HIDDEN_SIZE, return_sequences=True)))
+#model.add(Bidirectional(LSTM(HIDDEN_SIZE, return_sequences=True)))
 model.add(TimeDistributed(Dense(t_vocabsize)))
 model.add(Activation("softmax"))
 
