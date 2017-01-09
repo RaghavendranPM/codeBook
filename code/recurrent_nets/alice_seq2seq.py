@@ -12,6 +12,8 @@ from seq2seq.models import SimpleSeq2Seq
 
 INPUT_FILE = "../data/alice_in_wonderland.txt"
 
+NUM_EPOCHS = 25
+
 # (1) extract text from file into list of words
 words = []
 fin = open(INPUT_FILE, 'rb')
@@ -67,25 +69,25 @@ for i, output_text in enumerate(output_texts):
 Xtrain, Xval, ytrain, yval = train_test_split(X, y, test_size=0.1, 
                                               random_state=42)
     
-## (5) build model
-#model = Sequential()
-#model.add(LSTM(512, input_shape=(maxlen, nb_chars), return_sequences=False))
-#model.add(RepeatVector(maxlen))
-#model.add(LSTM(512, return_sequences=True))
-#model.add(TimeDistributed(Dense(nb_chars)))
-#model.add(Activation("softmax"))
-#
-#model.compile(loss="categorical_crossentropy", optimizer="adam", 
-#              metrics=["accuracy"])
-
-# (5/alt) build model using seq2seq
-model = SimpleSeq2Seq(input_shape=(maxlen, nb_chars),
-                      hidden_dim=512, output_length=maxlen,
-                      output_dim=nb_chars, unroll=True)
+# (5) build model
+model = Sequential()
+model.add(LSTM(512, input_shape=(maxlen, nb_chars), return_sequences=False))
+model.add(RepeatVector(maxlen))
+model.add(LSTM(512, return_sequences=True))
 model.add(TimeDistributed(Dense(nb_chars)))
-model.add(Activation("softmax"))                      
-model.compile(loss="categorical_crossentropy", optimizer="adam",
+model.add(Activation("softmax"))
+
+model.compile(loss="categorical_crossentropy", optimizer="adam", 
               metrics=["accuracy"])
+
+## (5/alt) build model using seq2seq
+#model = SimpleSeq2Seq(input_shape=(maxlen, nb_chars),
+#                      hidden_dim=512, output_length=maxlen,
+#                      output_dim=nb_chars, unroll=True)
+#model.add(TimeDistributed(Dense(nb_chars)))
+#model.add(Activation("softmax"))                      
+#model.compile(loss="categorical_crossentropy", optimizer="adam",
+#              metrics=["accuracy"])
               
 # (6) test model
 def decode_text(y):
@@ -95,7 +97,7 @@ def decode_text(y):
         text_seq.append(index2char[idx])
     return "".join(text_seq).strip()
 
-for iteration in range(50):
+for iteration in range(NUM_EPOCHS):
     print("=" * 50)
     print("Iteration-#: %d" % (iteration))
     model.fit(Xtrain, ytrain, batch_size=128, nb_epoch=1,
